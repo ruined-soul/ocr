@@ -1,0 +1,5 @@
+Flask==2.3.2
+pillow==10.0.0
+python-telegram-bot==20.0b1
+pytesseract==0.3.10
+gunicorn==20.1.0
