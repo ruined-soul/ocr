@@ -49,7 +49,8 @@ def index():
 # Main function
 async def main():
     token = os.getenv("TELEGRAM_BOT_TOKEN")  # Your Telegram bot token should be in the environment variable
-
+    # main.py (add this line in the `main` function)
+await app.start_webhook(listen="0.0.0.0", port=8080, url_path=token, webhook_url=f"https://mature-tabitha-xebal-fc34731e.koyeb.app/{token}")
     # Create the Application instance
     app = ApplicationBuilder().token(token).build()
     
