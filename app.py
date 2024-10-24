@@ -11,8 +11,8 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 
 logger = logging.getLogger(__name__)
 
-TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
-BOT_USERNAME = 'YOUR_TELEGRAM_BOT_USERNAME'
+TOKEN = '7889616274:AAGt3bWitE99oTqIBeddcNqm3XY3mm6eJuY'
+BOT_USERNAME = 'Client_aiBlackbot'
 URL = 'YOUR_KOYEB_APP_URL'
 
 app = Flask(__name__)
