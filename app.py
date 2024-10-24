@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN = '7889616274:AAGt3bWitE99oTqIBeddcNqm3XY3mm6eJuY'
 BOT_USERNAME = 'Client_aiBlackbot'
-URL = 'YOUR_KOYEB_APP_URL'
+URL = 'special-gianina-xexa-074b81e8.koyeb.app/'
 
 app = Flask(__name__)
 
