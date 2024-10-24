@@ -1,7 +1,3 @@
-pip install python-telegram-bot flask requests
-`` `
-Create a new file called `app.py` and add the following code:
-```python
 import os
 import logging
 from flask import Flask, request
