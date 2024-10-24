@@ -1,75 +1,62 @@
+pip install python-telegram-bot flask requests
+`` `
+Create a new file called `app.py` and add the following code:
+```python
 import os
-from telegram import Update, Bot
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters
-from PIL import Image
-import pytesseract
-from flask import Flask
+import logging
+from flask import Flask, request
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import Bot, Update
+import requests
 
-# Initialize Flask app (needed for Koyeb deployment)
-flask_app = Flask(__name__)
+# Enable logging
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                    level=logging.INFO)
 
-# OCR function
-def extract_text(image_path):
-    try:
-        # Open image and perform OCR
-        img = Image.open(image_path)
-        text = pytesseract.image_to_string(img)
-        return text if text.strip() else "No text found!"
-    except Exception as e:
-        return f"Error during OCR: {str(e)}"
+logger = logging.getLogger(__name__)
 
-# Start command
-async def start(update: Update, context):
-    await update.message.reply_text("Hi! Send me a manga image, and I'll extract the text for you!")
+TOKEN = 'YOUR_TELEGRAM_BOT_TOKEN'
+BOT_USERNAME = 'YOUR_TELEGRAM_BOT_USERNAME'
+URL = 'YOUR_KOYEB_APP_URL'
 
-# Handle received images
-async def handle_image(update: Update, context):
-    file = await update.message.photo[-1].get_file()  # Get the highest quality image
-    file_path = f"{file.file_id}.jpg"
-    await file.download_to_drive(file_path)
-    
-    # Extract text from image
-    extracted_text = extract_text(file_path)
-    
-    # Send the extracted text back to the user
-    await update.message.reply_text(f"Extracted Text:\n\n{extracted_text}")
-    
-    # Clean up the downloaded image
-    os.remove(file_path)
+app = Flask(__name__)
 
-# Fallback message handler for non-image messages
-async def unknown_message(update: Update, context):
-    await update.message.reply_text("Please send an image for OCR.")
-
-# Flask route to keep bot alive (for Koyeb)
-@flask_app.route('/')
+# Create a dummy web server to avoid TCP health check error
+@app.route('/')
 def index():
-    return "Bot is running!"
+    return 'Hello from Koyeb!'
 
-# Main function
-async def main():
-    token = os.getenv("TELEGRAM_BOT_TOKEN")  # Your Telegram bot token should be in the environment variable
-    
-    # Create the Application instance
-    bot_app = ApplicationBuilder().token(token).build()
+# Set up the Telegram bot
+bot = Bot(TOKEN)
+updater = Updater(TOKEN, use_context=True)
 
-    # Add command and message handlers
-    bot_app.add_handler(CommandHandler("start", start))
-    bot_app.add_handler(MessageHandler(filters.PHOTO, handle_image))
-    bot_app.add_handler(MessageHandler(filters.ALL, unknown_message))
+# Define a function to handle the /start command
+def start(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='Hello! I can help you search for images on Pinterest.')
 
-    # Start the bot webhook
-    await bot_app.start_webhook(
-        listen="0.0.0.0",
-        port=8080,
-        url_path=token,
-        webhook_url=f"https://mature-tabitha-xebal-fc34731e.koyeb.app/{token}"
-    )
+# Define a function to handle the /search command
+def search(update, context):
+    query = update.message.text.split(' ', 1)[1]
+    url = f'https://api.pinterest.com/v2/search/pins/?query={query}&limit=6'
+    response = requests.get(url)
+    data = response.json()
+    images = []
+    for pin in data['data']:
+        images.append(pin['images']['237x']['url'])
+    context.bot.send_message(chat_id=update.effective_chat.id, text='\n'.join(images))
 
-    # Keep the bot polling
-    await bot_app.updater.start_polling()
-    await bot_app.updater.idle()
+# Define a function to handle the /help command
+def help(update, context):
+    context.bot.send_message(chat_id=update.effective_chat.id, text='You can use the following commands:\n/start - Start the bot\n/search <query> - Search for images on Pinterest\n/help - Show this help message')
 
+# Add handlers for the commands
+updater.dispatcher.add_handler(CommandHandler('start', start))
+updater.dispatcher.add_handler(CommandHandler('search', search))
+updater.dispatcher.add_handler(CommandHandler('help', help))
+
+# Start the bot
+updater.start_polling()
+
+# Run the Flask app
 if __name__ == '__main__':
-    import asyncio
-    asyncio.run(main())
+    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
